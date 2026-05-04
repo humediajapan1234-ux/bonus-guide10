@@ -1134,6 +1134,7 @@ function removeLiverRow(id) {
 function calcAll() {
   const rows = document.getElementById('liver-rows').querySelectorAll('[id^="liver-row-"]');
   const results = [];
+  grandTotalDiamonds = 0;
   rows.forEach(function(row) {
     const rowId    = row.id.replace('liver-row-', '');
     const name     = (document.getElementById('lname-' + rowId).value || '').trim() || 'ライバー' + rowId;
@@ -1151,7 +1152,7 @@ function calcAll() {
   if (results.length === 0) { res.style.display = 'none'; return; }
   res.style.display = 'block';
 
-  let grandActive = 0;
+  var grandActive = 0;
   const cardsHtml = results.map(function(r) {
     // 配信日数・時間・ダイヤから達成Lvを自動判定
     const achievedLv = getActiveLv(r.days, r.hours, r.diamonds);
