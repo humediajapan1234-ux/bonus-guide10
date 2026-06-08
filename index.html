@@ -454,10 +454,10 @@ h1 { font-size: 15px; font-weight: 500; color: #1a1a1a; margin-bottom: 0.25rem; 
   </div>
 
   <div class="condition-grid">
-    <div class="cond-box"><div class="cond-label">ダイヤ数/月</div><div class="cond-val" id="cond-diamond">150,000以上</div></div>
-    <div class="cond-box"><div class="cond-label">有効配信日数</div><div class="cond-val" id="cond-days">18日以上</div></div>
-    <div class="cond-box"><div class="cond-label">月間LIVE時間</div><div class="cond-val" id="cond-hours">40時間以上</div></div>
-    <div class="cond-box"><div class="cond-label">1ダイヤあたり報酬</div><div class="cond-val" id="cond-rate" style="color:#D85A30;">$0.0002</div></div>
+    <div class="cond-box"><div class="cond-label">ダイヤ数/月</div><div class="cond-val" id="cond-diamond">100以上</div></div>
+    <div class="cond-box"><div class="cond-label">有効配信日数</div><div class="cond-val" id="cond-days">8日以上</div></div>
+    <div class="cond-box"><div class="cond-label">月間LIVE時間</div><div class="cond-val" id="cond-hours">25時間以上</div></div>
+    <div class="cond-box"><div class="cond-label">計算式</div><div class="cond-val" id="cond-rate" style="color:#D85A30;font-size:11px;">ダイヤ×0.5%÷100×FX</div></div>
   </div>
 
   <div class="section-title" id="lv-detail-title">Lv1 — 報酬早見表</div>
@@ -677,16 +677,16 @@ function showRankLvResult(rank, lv, kind) {
   var bonusRate = isUp ? (upRates[rank] || 0) : (maintRates[rank] || 0);
 
   // アクティブLvのレート（lvData_ratesはLv1〜5の順）
-  var lvRate = lvData_rates[lv - 1] || 0.0002;
+  var lvRate = (lvData[lv] && lvData[lv].rateNum) ? lvData[lv].rateNum : 0.00005;
 
   // アクティブ報酬: baseDia × lvRate × FX × 60%
-  var actJpy    = Math.round(baseDia * lvRate * FX * 0.1);
+  var actJpy    = Math.round(baseDia * lvRate * FX * ACT_PCT);
   // ランクボーナス: baseDia × bonusRate × FX × 60%（アクティブLvに連動して baseDia が変わる）
   // さらにランクボーナスもアクティブLvのrateNumに比例させる
   // 計算式: baseDia × lvRate × (bonusRate / 0.0002) × FX × 0.6
   //  = アクティブ報酬 × (bonusRate / 0.0002)
   //  ※ 0.0002はLv1の基準レート。Lvが上がるほどランクボーナスも比例して増加
-  var bonusJpy  = Math.round(baseDia * lvRate * (bonusRate / 0.0002) * FX * 0.1);
+  var bonusJpy  = Math.round(baseDia * bonusRate * FX * ACT_PCT);
   var totalJpy  = actJpy + bonusJpy;
 
   var el = document.getElementById('rak-result-' + rank);
@@ -723,12 +723,14 @@ function showRankLvResult(rank, lv, kind) {
 }
 
 const lvData = {
-  1: { days: '18日以上', hours: '40時間以上',  rate: '$0.0002', rateNum: 0.0002, minDays: 18, minHours: 40,  minDiamond: 150000 },
-  2: { days: '20日以上', hours: '80時間以上',  rate: '$0.0003', rateNum: 0.0003, minDays: 20, minHours: 80,  minDiamond: 150000 },
-  3: { days: '20日以上', hours: '100時間以上', rate: '$0.0004', rateNum: 0.0004, minDays: 20, minHours: 100, minDiamond: 150000 },
-  4: { days: '22日以上', hours: '120時間以上', rate: '$0.0005', rateNum: 0.0005, minDays: 22, minHours: 120, minDiamond: 150000 },
-  5: { days: '24日以上', hours: '140時間以上', rate: '$0.0006', rateNum: 0.0006, minDays: 24, minHours: 140, minDiamond: 150000 }
+  1: { days: '8日以上',  hours: '25時間以上',  rate: 'Lv1 / 0.5%', rateNum: 0.005/100, bonusRate: 0.005, minDays: 8,  minHours: 25,  minDiamond: 100 },
+  2: { days: '15日以上', hours: '45時間以上',  rate: 'Lv2 / 1%',   rateNum: 0.01/100,  bonusRate: 0.01,  minDays: 15, minHours: 45,  minDiamond: 100 },
+  3: { days: '18日以上', hours: '70時間以上',  rate: 'Lv3 / 2%',   rateNum: 0.02/100,  bonusRate: 0.02,  minDays: 18, minHours: 70,  minDiamond: 100 },
+  4: { days: '20日以上', hours: '90時間以上',  rate: 'Lv4 / 3%',   rateNum: 0.03/100,  bonusRate: 0.03,  minDays: 20, minHours: 90,  minDiamond: 100 },
+  5: { days: '22日以上', hours: '110時間以上', rate: 'Lv5 / 4%',   rateNum: 0.04/100,  bonusRate: 0.04,  minDays: 22, minHours: 110, minDiamond: 100 }
 };
+const ACT_PCT = 0.1;
+
 // 配信日数・時間・ダイヤから達成Lvを判定
 function getActiveLv(days, hours, diamonds) {
   if (!days || !hours || !diamonds) return 0;
@@ -792,16 +794,15 @@ function showLv(lv) {
   document.querySelectorAll('.lv-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.lv-btn')[lv-1].classList.add('active');
   const d = lvData[lv];
-  document.getElementById('cond-diamond').textContent = '150,000以上';
+  document.getElementById('cond-diamond').textContent = '100以上';
   document.getElementById('cond-days').textContent = d.days;
   document.getElementById('cond-hours').textContent = d.hours;
   document.getElementById('cond-rate').textContent = d.rate;
   document.getElementById('lv-detail-title').textContent = 'Lv'+lv+' — 報酬早見表';
   const tbl = document.getElementById('lv-table');
   tbl.innerHTML = tableRows.map(diamonds => {
-    const usd = (diamonds * d.rateNum).toFixed(1);
-    const jpy = Math.round(diamonds * d.rateNum * FX * 0.1).toLocaleString();
-    return `<div class="card-row"><span class="card-label">${(diamonds/10000).toFixed(0)}万ダイヤ</span><span class="card-val">$${usd} / <span style="color:#D85A30;">¥${jpy}</span></span></div>`;
+    const jpy = Math.round(diamonds * d.rateNum * FX * ACT_PCT).toLocaleString();
+    return `<div class="card-row"><span class="card-label">${fmtD(diamonds)}</span><span class="card-val"><span style="color:#D85A30;">¥${jpy}</span></span></div>`;
   }).join('');
 }
 
@@ -811,7 +812,7 @@ function revInternal(diamonds, rate) {
 }
 // エージェンシー受取 = 会社全体 ÷ 2 × 60% × FX（円換算）
 function revAgency(internal) {
-  return internal / 2 * 0.6 * FX;
+  return internal / 2 * ACT_PCT * FX;
 }
 function getRevLevel(ratio) {
   for (var i = 0; i < revLevels.length; i++) {
@@ -903,10 +904,9 @@ function getRankupBonus(prevRank, currRank, isAdvanced, currDiamonds) {
   // ④ アップボーナス率（isRankupのときのみ適用）
   var upBase = 0, upAdv = 0;
   if (isRankup) {
-    if (prevRank <= 2)      { upBase = 0.00055; upAdv = 0.00065; }
-    else if (prevRank <= 7) { upBase = 0.00035; upAdv = 0.00045; }
-    else if (prevRank <= 9) { upBase = 0.00020; upAdv = 0.00030; }
-    // prevRank === 10 はアップなし（upBase/upAdv = 0のまま）
+    if (currRank <= 2)      { upBase = 0.00055; upAdv = 0.00065; }
+    else if (currRank <= 7) { upBase = 0.00035; upAdv = 0.00045; }
+    else if (currRank <= 9) { upBase = 0.00020; upAdv = 0.00030; }
   }
 
   // 上級のみ版: ベース条件は0%、上級条件（7日+15h）のみ有効
@@ -975,7 +975,7 @@ function previewRankup(id) {
   // totalRate: maintPct/upPctは表示用%文字列 → /100して通常%→さらに×0.0001でダイヤ→ドルスケールに
   // ランクアップ報酬: ダイヤ × rate（正しいスケール） × FX × 60%
   var totalRate = bonus.maintRate + (bonus.isRankup ? bonus.upRate : 0);
-  var jpyPreview = curr ? Math.round(curr * totalRate * FX * 0.1) : 0;
+  var jpyPreview = curr ? Math.round(curr * totalRate * FX * ACT_PCT) : 0;
   var jpyHtml = curr ? (
     bonus.belowThreshold
     ? '<div style="margin-top:5px;background:#FAECE7;border-radius:7px;padding:5px 10px;font-size:11px;color:#993C1D;">⚠ 基準ダイヤ未達 — ボーナス 0%</div>'
@@ -1013,7 +1013,7 @@ function previewLv(id) {
   });
   html_str += '</div>';
   if (lv > 0) {
-    var jpy = Math.round((diamonds||0) * lvData[lv].rateNum * FX);
+    var jpy = Math.round((diamonds||0) * lvData[lv].rateNum * FX * ACT_PCT);
     html_str += '<div style="background:' + lvColors[lv-1] + ';border-radius:8px;padding:6px 10px;margin-top:4px;display:flex;justify-content:space-between;align-items:center;">' +
       '<span style="font-size:11px;font-weight:600;color:' + lvTColors[lv-1] + ';">Lv' + lv + ' 確定 ✓</span>' +
       '<span style="font-size:16px;font-weight:700;color:' + lvTColors[lv-1] + ';">¥' + jpy.toLocaleString() + '</span>' +
@@ -1052,7 +1052,7 @@ function calcRevBonus() {
   if (!grandTotalDiamonds || grandTotalDiamonds <= 0) { resEl.style.display = 'none'; return; }
   var rate     = selectedRevRatePct / 100;
   var bonusUsd = grandTotalDiamonds * rate / 100;
-  var bonusJpy = bonusUsd * FX * 0.1;
+  var bonusJpy = bonusUsd * FX * ACT_PCT;
   resEl.style.display = 'block';
   document.getElementById('rev-bonus-disp').textContent      = fmtD(grandTotalDiamonds) + ' ダイヤ';
   document.getElementById('rev-bonus-rate-disp').textContent = selectedRevRatePct + '%';
@@ -1102,8 +1102,8 @@ function addLiverRow() {
           '<div style="font-size:10px;color:#888;margin-bottom:3px;">当月ダイヤ数</div>' +
           '<div class="km-wrap">' +
             '<input type="text" placeholder="例: 500K" id="lcurr-' + id + '" oninput="previewRankup(' + id + ')" style="padding:7px 8px;font-size:13px;font-weight:600;border:0.5px solid #9FE1CB;border-radius:8px;background:#fff;outline:none;text-align:center;">' +
-            '<button class="km-btn" onclick="appendKM(\'lcurr-' + id + '\',\'K\',function(){previewRankup(' + id + ');previewLv(' + id + ')})">K</button>' +
-            '<button class="km-btn" onclick="appendKM(\'lcurr-' + id + '\',\'M\',function(){previewRankup(' + id + ');previewLv(' + id + ')})">M</button>' +
+            '<button class="km-btn" onclick="appendKM(\'lcurr-' + id + '\',\'K\',function(){previewRankup(' + id + ');previewLv(' + id + ');autoCalcAll()})">K</button>' +
+            '<button class="km-btn" onclick="appendKM(\'lcurr-' + id + '\',\'M\',function(){previewRankup(' + id + ');previewLv(' + id + ');autoCalcAll()})">M</button>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -1139,9 +1139,9 @@ function calcAll() {
     const rowId    = row.id.replace('liver-row-', '');
     const name     = (document.getElementById('lname-' + rowId).value || '').trim() || 'ライバー' + rowId;
     const tikId    = (document.getElementById('lid-' + rowId).value || '').trim();
-    const diamonds = parseD(document.getElementById('lcurr-' + rowId).value);
-    const days     = parseFloat(document.getElementById('ldays-' + rowId).value) || 0;
-    const hours    = parseFloat(document.getElementById('lhours-' + rowId).value) || 0;
+    const diamonds = parseD((document.getElementById('lcurr-' + rowId)||{}).value) || 0;
+    const days     = parseFloat((document.getElementById('ldays-' + rowId)||{}).value) || 0;
+    const hours    = parseFloat((document.getElementById('lhours-' + rowId)||{}).value) || 0;
     var prev   = parseD((document.getElementById('lprev-'   + rowId)||{}).value);
     var lcurr  = parseD((document.getElementById('lcurr-'   + rowId)||{}).value);
     var rdays  = parseFloat((document.getElementById('ldays-' + rowId)||{}).value) || 0;
@@ -1161,14 +1161,14 @@ function calcAll() {
     // 達成Lvの報酬
     var achievedJpy = 0;
     if (achievedLv > 0) {
-      achievedJpy = Math.round(r.diamonds * lvData[achievedLv].rateNum * FX * 0.1);
+      achievedJpy = Math.round(r.diamonds * lvData[achievedLv].rateNum * FX * ACT_PCT);
       grandActive += achievedJpy;
     }
 
     // Lv別一覧（達成Lvをハイライト）
     const activeLvHtml = [1,2,3,4,5].map(function(lv) {
       const d    = lvData[lv];
-      const jpy  = Math.round(r.diamonds * d.rateNum * FX * 0.1);
+      const jpy  = Math.round(r.diamonds * d.rateNum * FX * ACT_PCT);
       const isAchieved = (lv === achievedLv);
       const rowStyle = isAchieved
         ? 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:7px;background:' + lvColors[lv-1] + ';margin-bottom:3px;'
@@ -1204,7 +1204,7 @@ function calcAll() {
     var rkBonus  = getRankupBonus(prevRk, currRk, isAdvR, r.lcurr);
     // ランクアップ報酬: ダイヤ × rate（0.00025スケール） × FX × 60%
     var totalRkRate = rkBonus.maintRate + (rkBonus.isRankup ? rkBonus.upRate : 0);
-    var rankupJpy = (r.lcurr && !rkBonus.belowThreshold) ? Math.round(r.lcurr * totalRkRate * FX * 0.1) : 0;
+    var rankupJpy = (r.lcurr && !rkBonus.belowThreshold) ? Math.round(r.lcurr * totalRkRate * FX * ACT_PCT) : 0;
     grandActive += rankupJpy;
     grandTotalDiamonds += (r.diamonds || 0);
     var bgRkP = rankColors[prevRk-1], tcRkP = rankTColors[prevRk-1];
@@ -1299,7 +1299,7 @@ function calcGoal() {
 
   const dRows = hasD ? [1,2,3,4,5].map(function(lv) {
     const d   = lvData[lv];
-    const jpy = Math.round(dGoal * d.rateNum * FX);
+    const jpy = Math.round(dGoal * d.rateNum * FX * ACT_PCT);
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:0.5px solid #eee;">' +
       '<span style="background:' + lvColors[lv-1] + ';color:' + lvTColors[lv-1] + ';font-size:11px;padding:1px 8px;border-radius:999px;font-weight:500;">Lv' + lv + '</span>' +
       '<span style="font-size:11px;color:#888;">' + fmtD(dGoal) + ' ダイヤ達成時</span>' +
@@ -1309,7 +1309,7 @@ function calcGoal() {
 
   const rRows = hasR ? [1,2,3,4,5].map(function(lv) {
     const d      = lvData[lv];
-    const needed = Math.ceil(rGoal / (d.rateNum * FX));
+    const needed = Math.ceil(rGoal / (d.rateNum * FX * ACT_PCT));
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:0.5px solid #eee;">' +
       '<span style="background:' + lvColors[lv-1] + ';color:' + lvTColors[lv-1] + ';font-size:11px;padding:1px 8px;border-radius:999px;font-weight:500;">Lv' + lv + '</span>' +
       '<span style="font-size:11px;color:#888;">¥' + rGoal.toLocaleString() + ' 達成に必要</span>' +
